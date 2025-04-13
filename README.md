@@ -1,7 +1,7 @@
-# Click-Buffer-In-C
+# Click-Buffer
 Are you tired of clicking fast? your mouse is so bad that you can't click fast? click faster with click buffer!
 
-Written in C.
+Written in C. WIN32 BASED
 
 Features:
 Adjustable click buffer rate.
@@ -11,7 +11,7 @@ The program detects if you are clicking fast to buffer the clicking output so yo
 
 How to Use
 Just run ClickBuffer.exe. A terminal window will open showing the menu. Use the number keys to select options and toggle the buffer.
-Also for anyone Running this from VScode remember to include the VScode file to make sure the output is in CMD and not VScode built in terminal.
+Also for anyone Running this from VScode remember to include the VScode file
 ![Click Buffer Menu](assets/menu.png)
 
 Download
