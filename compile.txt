@@ -1,0 +1,1 @@
+gcc -g -Isrc/include -o ClickBuffer.exe src/gui.c src/ClickBuffer.c assets/ClickBuffer_res.o -luser32 -lgdi32 -lcomctl32 -mwindows
