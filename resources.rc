@@ -3,4 +3,5 @@
 IDB_LEFT_CLICK BITMAP "assets\\left_click.bmp"
 IDB_RIGHT_CLICK BITMAP "assets\\right_click.bmp"
 IDI_ICON1 ICON "assets\\icon.ico"
+IDI_ICON2 ICON "assets\\icon.ico"
 

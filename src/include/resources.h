@@ -1,5 +1,6 @@
 #define IDI_ICON1 1000
 #define IDB_LEFT_CLICK 1001
 #define IDB_RIGHT_CLICK 1002
+#define IDI_ICON2 1003
 
 
