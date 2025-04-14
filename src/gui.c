@@ -73,8 +73,7 @@ switch (msg)
           buf[1] = '\0';
       
           int x = 65 + i * 25;
-          HWND hLabel_100 = CreateWindow("STATIC",
-              buf,
+          HWND hLabel_100 = CreateWindow("STATIC", buf,
               WS_VISIBLE | WS_CHILD,
               x, 85, 20, 20,
               hwnd, NULL, NULL, NULL);
@@ -133,8 +132,7 @@ switch (msg)
           buf[1] = '\0';
       
           int x = 65 + i * 25;
-          HWND hLabel_101 = CreateWindow("STATIC",
-              buf,
+          HWND hLabel_101 = CreateWindow("STATIC", buf,
               WS_VISIBLE | WS_CHILD,
               x, 255, 20, 20,
               hwnd, NULL, NULL, NULL);
@@ -182,7 +180,6 @@ switch (msg)
           270, 30, 100, 100, // Set reasonable width and height
           hwnd, NULL, GetModuleHandle(NULL), NULL);
           SendMessage(hImage_Left_Click, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hLeftClickBmp);
-
      HBITMAP hRightClickBmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_RIGHT_CLICK));   //load right_click.bmp
      HWND hImage_Right_Click = CreateWindow("STATIC", NULL,
           WS_VISIBLE | WS_CHILD | SS_BITMAP,
