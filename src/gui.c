@@ -223,16 +223,9 @@ switch (msg)
           
      case WM_COMMAND:
 
-          if (LOWORD(wParam) == BUTTON_GITHUB) 
-          {
-               ShellExecute(hwnd, "open", "https://github.com/HarpCheemse/Click-Buffer-Wind32-GUI-", NULL, NULL, SW_SHOWNORMAL);
-          }
-          if (LOWORD(wParam) == BUTTON_EXIT) 
-          {
-               PostQuitMessage(0);
-          }
+          if (LOWORD(wParam) == BUTTON_GITHUB) ShellExecute(hwnd, "open", "https://github.com/HarpCheemse/Click-Buffer-Wind32-GUI-", NULL, NULL, SW_SHOWNORMAL);
+          if (LOWORD(wParam) == BUTTON_EXIT) PostQuitMessage(0);
           break;
-
      case WM_DESTROY:
           PostQuitMessage(0);
           break;
@@ -240,11 +233,12 @@ switch (msg)
      default:
           return DefWindowProc(hwnd, msg, wParam, lParam);
     }
-
     return 0;
 }
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int nCmdShow) {
+     (void)hPrevInst;
+     (void)args;
      int width = 425;
      int height = 400;
      int screenWidth = GetSystemMetrics(SM_CXSCREEN);

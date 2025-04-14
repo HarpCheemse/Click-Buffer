@@ -200,19 +200,18 @@ void* leftClickEvent(void*)
         int is_valid_left_click = 1;
         if(DETECT_LEFT_CLICK && LEFT_CLICK_BUFFER_RATE != 0)  //detect the first left click
         {
-            if(isHoldingLeftClick()) continue;  //track if it's a click or a hold
-            while(is_valid_left_click)
+            if(isHoldingLeftClick()) continue;
+            if(is_valid_left_click)
             {
                 start_timer = GetTickCount();
                 if(!isLeftClickInWaitThreshold(start_timer)) is_valid_left_click = 0;  //detect if user is clicking fast
-                if(isHoldingLeftClick())
+                if(isHoldingLeftClick()) is_valid_left_click = 0; 
+                while(is_valid_left_click)
                 {
-                    is_valid_left_click = 0; 
-                    printf("STOPING ");
-                }     //go back to loop one if user is clicking not fast enough / holding left click
-                if(is_valid_left_click)
-                {
-                    performLeftClick(LEFT_CLICK_BUFFER_RATE);
+                    start_timer = GetTickCount();
+                    if(!isLeftClickInWaitThreshold(start_timer)) is_valid_left_click = 0;
+                    if(isHoldingLeftClick()) is_valid_left_click = 0; 
+                    if(is_valid_left_click) performLeftClick(LEFT_CLICK_BUFFER_RATE);
                 }
             }
         }    
@@ -228,15 +227,18 @@ void* rightClickEvent(void*)
         int is_valid_right_click = 1;
         if(DETECT_RIGHT_CLICK && RIGHT_CLICK_BUFFER_RATE != 0)  //detect the first left click
         {
-            if(isHoldingRightClick()) continue;  //track if it's a click or a hold
-            while(is_valid_right_click)
+            if(isHoldingRightClick()) continue;
+            if(is_valid_right_click)
             {
                 start_timer = GetTickCount();
                 if(!isRightClickInWaitThreshold(start_timer)) is_valid_right_click = 0;  //detect if user is clicking fast
-                if(isHoldingRightClick()) is_valid_right_click = 0;      //go back to loop one if user is clicking not fast enough / holding left click
-                if(is_valid_right_click)
+                if(isHoldingRightClick()) is_valid_right_click = 0; 
+                while(is_valid_right_click)
                 {
-                    performRightClick(RIGHT_CLICK_BUFFER_RATE);
+                    start_timer = GetTickCount();
+                    if(!isRightClickInWaitThreshold(start_timer)) is_valid_right_click = 0;
+                    if(isHoldingRightClick()) is_valid_right_click = 0; 
+                    if(is_valid_right_click) performRightClick(RIGHT_CLICK_BUFFER_RATE);
                 }
             }
         }    
