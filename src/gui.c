@@ -4,21 +4,86 @@
 #include "include/ClickBuffer.h"
 #include "include/resources.h"
 
-#define BUTTON_GITHUB 100
-#define BUTTON_EXIT 101
+#define ID_BUTTON_GITHUB 100
+#define ID_BUTTON_EXIT 101
 #define ID_LABEL 102
 #define ID_TRACKBAR 103
+#define ID_BUTTON 104
 
 static HWND hTrack_left_click = NULL;
 static HWND hTrack_right_click = NULL;
 HBRUSH hWhiteBrush;
-HFONT hFont13, hFont16;
+HFONT hFont13_NORMAL, hFont16_BOLD, hFont13_BOLD, hFont16_NORMAL;
 
-char label_text[100];
+char current_leftclick_cps[100];
+char current_rightclick_cps[100];
+
 int level_cps[6] = {7,14,18,24,30,40};
-BITMAP bmp;
-HBITMAP hBitmap = NULL;
 
+HWND hLabel_Current_LeftClick_CPS;
+HWND hLabel_Current_RightClick_CPS;
+
+HFONT createUIFont(int height, int weight, LPCSTR font) 
+{
+    return CreateFont(
+        height, 0, 0, 0,
+        weight, FALSE, FALSE, FALSE,
+        ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_DONTCARE, font
+    );
+}
+HWND createLabel(HWND parent, const char* text, int x, int y, int w, int h, DWORD style, int id, HFONT font)
+{
+    HWND hwndLabel = CreateWindow("STATIC", text,
+        WS_VISIBLE | WS_CHILD | style,
+        x, y, w, h,
+        parent, (HMENU)(intptr_t)id, NULL, NULL);
+    SendMessage(hwndLabel, WM_SETFONT, (WPARAM)font, TRUE);
+    return hwndLabel;
+}
+HWND createButton(HWND parent, const char* text, int x, int y, int w, int h, DWORD style, int id, HFONT font)
+{
+    HWND hwndButton = CreateWindow("BUTTON", text,
+        WS_VISIBLE | WS_CHILD | style,
+        x,y,w,h,
+        parent, (HMENU)(intptr_t)id, NULL, NULL);
+        SendMessage(hwndButton, WM_SETFONT, (WPARAM)font, TRUE);
+        return hwndButton;
+}
+HWND createSlide(HWND parent, const char* text, int x, int y, int w, int h, DWORD style, int id, int start, int end, int pos)
+{
+     HWND hwndSlide = CreateWindowEx(0, TRACKBAR_CLASS, text,
+     WS_VISIBLE | WS_CHILD | style,
+     x, y, w, h,
+     parent, (HMENU)(intptr_t)id, NULL, NULL);
+     SendMessage(hwndSlide, TBM_SETRANGE, TRUE, MAKELPARAM(start, end));
+     SendMessage(hwndSlide, TBM_SETPOS, TRUE, pos);
+     return hwndSlide;
+}
+HWND displayBitMap(HWND parent, int x, int y, int w, int h, int id)
+{
+    HBITMAP load_bitmap = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(id));
+    HWND image = CreateWindow("STATIC", NULL,
+        WS_VISIBLE | WS_CHILD | SS_BITMAP,
+        x, y, w, h,
+        parent, NULL, GetModuleHandle(NULL), NULL);
+        SendMessage(image, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)load_bitmap);
+    return image;
+}
+void createSlideNumber(HWND parent, int start, int end, int x, int y, int w, int h, int jump, HFONT font)
+{
+     for (int i = start; i <= end; i++) 
+     {
+          char buffer[50];
+          sprintf(buffer, "%d", i);
+          int temp = x + i * jump;
+          HWND hLabel_100 = CreateWindow("STATIC", buffer,
+              WS_VISIBLE | WS_CHILD,
+              temp, y, w, h,
+              parent, NULL, NULL, NULL);
+              SendMessage(hLabel_100, WM_SETFONT, (WPARAM)font, TRUE); 
+     }
+}
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) 
 {
 switch (msg) 
@@ -26,188 +91,69 @@ switch (msg)
      case WM_CREATE:
 
      hWhiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
-     hFont13 = CreateFont(
-          13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-          DEFAULT_PITCH | FF_DONTCARE, "Segoe UI");
-  
-     hFont16 = CreateFont(
-          16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-          ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-          DEFAULT_PITCH | FF_DONTCARE, "Segoe UI"); 
+     hFont13_NORMAL = createUIFont(13, FW_NORMAL, "Segeo UI");
+     hFont13_BOLD = createUIFont(13, FW_BOLD, "Segeo UI");
+     hFont16_NORMAL = createUIFont(16, FW_NORMAL, "Segeo UI");
+     hFont16_BOLD = createUIFont(16, FW_BOLD, "Segeo UI");
 
-     CreateWindow("BUTTON", "",
-          WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-          10, 10, 230, 150,
-          hwnd, NULL, NULL, NULL);
+     //Group_Box
+     createButton(hwnd, "", 10, 10, 230, 150, BS_GROUPBOX, ID_BUTTON, hFont13_NORMAL);
+     createButton(hwnd, "", 10, 180, 230, 150, BS_GROUPBOX, ID_BUTTON, hFont13_NORMAL); // setting group box
 
-     HWND hLabel_1 = CreateWindow("STATIC", "Left Click Buffer",
-          WS_VISIBLE | WS_CHILD,
-          20, 10, 90, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);      
-          SendMessage(hLabel_1, WM_SETFONT, (WPARAM)hFont13, TRUE); 
+     createButton(hwnd, "", 260, 10, 150, 150, BS_GROUPBOX, ID_BUTTON, hFont13_NORMAL); // image group box
+     createButton(hwnd, "", 260, 180, 150, 150, BS_GROUPBOX, ID_BUTTON, hFont13_NORMAL);
+     
+     //Label_Buffer
+     createLabel(hwnd, "Left Click Buffer \0", 20, 10, 110, 15, 0, ID_LABEL, hFont16_BOLD);
+     createLabel(hwnd, "Right Click Buffer \0", 20, 180, 115, 15, 0, ID_LABEL, hFont16_BOLD);
 
-     HWND hLabel_2 = CreateWindow("STATIC", "Left Click Buffer Rate",
-          WS_VISIBLE | WS_CHILD,
-          20, 30, 150, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_2, WM_SETFONT, (WPARAM)hFont13, TRUE);
+     createLabel(hwnd, "Left Click Buffer Rate\0", 20, 30, 150, 15, 0, ID_LABEL, hFont13_NORMAL);
+     createLabel(hwnd, "Right Click Buffer Rate\0", 20, 200, 150, 15, 0, ID_LABEL, hFont13_NORMAL);
 
-     hTrack_left_click = CreateWindowEx(0, TRACKBAR_CLASS, "",           //display left click slide
-                              WS_VISIBLE | WS_CHILD | TBS_AUTOTICKS,
-                              55, 50, 150, 30,
-                              hwnd, (HMENU)ID_TRACKBAR, NULL, NULL);
-     SendMessage(hTrack_left_click, TBM_SETRANGE, TRUE, MAKELPARAM(0, 5));
-     SendMessage(hTrack_left_click, TBM_SETPOS, TRUE, 1);
+     //Tracks
+     hTrack_left_click = createSlide(hwnd, "", 55, 55, 150, 30, TBS_AUTOTICKS, ID_TRACKBAR, 0, 5, 1);
+     hTrack_right_click = createSlide(hwnd, "", 55, 225, 150, 30, TBS_AUTOTICKS, ID_TRACKBAR, 0, 5, 1);
 
-     HWND hLabel_3 = CreateWindow("STATIC", "Level:",
-          WS_VISIBLE | WS_CHILD,
-          22, 50, 30, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_3, WM_SETFONT, (WPARAM)hFont13, TRUE);
+     //Label_Levels
+     createLabel(hwnd, "Level", 22, 60, 30, 15, 0, ID_LABEL, hFont16_NORMAL);
+     createLabel(hwnd, "Level", 22, 230, 30, 15, 0, ID_LABEL, hFont16_NORMAL);
+     
+     //Tracks_Slides_Options
+     createSlideNumber(hwnd, 0, 5, 65, 85, 20, 20, 25, hFont13_NORMAL);
+     createSlideNumber(hwnd, 0, 5, 65, 255, 20, 20, 25, hFont13_NORMAL);
 
-     for (int i = 0; i <= 5; i++) 
-     {            //display 0 to 5 in the slide
-          char buf[2];
-          buf[0] = '0' + i;
-          buf[1] = '\0';
-      
-          int x = 65 + i * 25;
-          HWND hLabel_100 = CreateWindow("STATIC", buf,
-              WS_VISIBLE | WS_CHILD,
-              x, 85, 20, 20,
-              hwnd, NULL, NULL, NULL);
-              SendMessage(hLabel_100, WM_SETFONT, (WPARAM)hFont13, TRUE); 
-     }
+     //Label_Current_CPS
+     sprintf(current_leftclick_cps, "Your Average 7 CPS Is Now %d CPS", level_cps[LEFT_CLICK_BUFFER_RATE]);
+     sprintf(current_rightclick_cps, "Your Average 7 CPS Is Now %d CPS", level_cps[RIGHT_CLICK_BUFFER_RATE]);
+     hLabel_Current_LeftClick_CPS = createLabel(hwnd, current_leftclick_cps, 20, 140, 200, 15, 0 ,ID_LABEL, hFont16_BOLD);
+     hLabel_Current_RightClick_CPS = createLabel(hwnd, current_rightclick_cps, 20, 310, 200, 15, 0 ,ID_LABEL, hFont16_BOLD);
+     
+     //Label_Desciption
+     createLabel(hwnd, "Left Click", 310, 143, 50, 15, 0 , ID_LABEL, hFont13_NORMAL);
+     createLabel(hwnd, "Right Click", 310, 313, 55, 15, 0 , ID_LABEL, hFont13_NORMAL);
+     
+     //Buttons
+     createButton(hwnd, "GitHub", 260, 340, 70, 20, BS_FLAT, ID_BUTTON_GITHUB, hFont13_NORMAL);
+     createButton(hwnd, "Exit", 340, 340, 70, 20, BS_FLAT, ID_BUTTON_EXIT, hFont13_NORMAL);
 
-     sprintf(label_text, "Your Average 7 CPS Is Now %d CPS", level_cps[LEFT_CLICK_BUFFER_RATE]);
-     HWND hLabel_7 = CreateWindow("STATIC", label_text, 
-          WS_VISIBLE | WS_CHILD,
-          20, 120, 200, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_7, WM_SETFONT, (WPARAM)hFont16, TRUE);
+     //Display BitMaps
+     displayBitMap(hwnd, 270, 30, 100, 100, IDB_LEFT_CLICK);
+     displayBitMap(hwnd, 270, 200, 100, 100, IDB_RIGHT_CLICK);
 
-     sprintf(label_text, "Your Average 7 CPS Is Now %d CPS", level_cps[RIGHT_CLICK_BUFFER_RATE]);
-     HWND hLabel_8 = CreateWindow("STATIC", label_text, 
-          WS_VISIBLE | WS_CHILD,
-          20, 290, 200, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_8, WM_SETFONT, (WPARAM)hFont16, TRUE);
-
-     // RIGHT CLICK
-     CreateWindow("BUTTON", "",
-          WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-          10, 180, 230, 150,
-          hwnd, NULL, NULL, NULL);
-
-     HWND hLabel_4 = CreateWindow("STATIC", "Right Click Buffer",
-          WS_VISIBLE | WS_CHILD,
-          20, 180, 90, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);      
-          SendMessage(hLabel_4, WM_SETFONT, (WPARAM)hFont13, TRUE); 
-
-     HWND hLabel_5 = CreateWindow("STATIC", "Right Click Buffer Rate",
-          WS_VISIBLE | WS_CHILD,
-          20, 200, 150, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_5, WM_SETFONT, (WPARAM)hFont13, TRUE);
-
-     hTrack_right_click = CreateWindowEx(0, TRACKBAR_CLASS, "",        //Right Click Slide
-          WS_VISIBLE | WS_CHILD | TBS_AUTOTICKS,
-          55, 220, 150, 30,
-          hwnd, (HMENU)ID_TRACKBAR, NULL, NULL);
-          SendMessage(hTrack_right_click, TBM_SETRANGE, TRUE, MAKELPARAM(0, 5));
-          SendMessage(hTrack_right_click, TBM_SETPOS, TRUE, 1);
-
-     HWND hLabel_6 = CreateWindow("STATIC", "Level:",
-          WS_VISIBLE | WS_CHILD,
-          22, 220, 30, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_6, WM_SETFONT, (WPARAM)hFont13, TRUE);
-
-     for (int i = 0; i <= 5; i++) 
-     {
-          char buf[2];
-          buf[0] = '0' + i;
-          buf[1] = '\0';
-      
-          int x = 65 + i * 25;
-          HWND hLabel_101 = CreateWindow("STATIC", buf,
-              WS_VISIBLE | WS_CHILD,
-              x, 255, 20, 20,
-              hwnd, NULL, NULL, NULL);
-              SendMessage(hLabel_101, WM_SETFONT, (WPARAM)hFont13, TRUE); 
-     }
-
-     HWND hLabel_9 = CreateWindow("STATIC", "Left Click",
-          WS_VISIBLE | WS_CHILD,
-          310, 143, 50, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_9, WM_SETFONT, (WPARAM)hFont13, TRUE);
-
-     HWND hLabel_10 = CreateWindow("STATIC", "Right Click",
-          WS_VISIBLE | WS_CHILD,
-          310, 313, 55, 15,
-          hwnd, (HMENU)ID_LABEL, NULL, NULL);
-          SendMessage(hLabel_10, WM_SETFONT, (WPARAM)hFont13, TRUE);
-          
-     HWND github = CreateWindow("BUTTON", "GitHub", 
-          WS_VISIBLE | WS_CHILD | BS_FLAT, 
-          260, 340, 70, 20, 
-          hwnd, (HMENU)BUTTON_GITHUB, NULL, NULL);
-          SendMessage(github, WM_SETFONT, (WPARAM)hFont13, TRUE);
-
-     HWND exit = CreateWindow("BUTTON", "Exit", 
-          WS_VISIBLE | WS_CHILD | BS_FLAT, 
-          340, 340, 70, 20, 
-          hwnd, (HMENU)BUTTON_EXIT, NULL, NULL);
-          SendMessage(exit, WM_SETFONT, (WPARAM)hFont13, TRUE);
-
-     // image
-     CreateWindow("BUTTON", "",
-          WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-          260, 10, 150, 150,
-          hwnd, NULL, NULL, NULL);
-
-     CreateWindow("BUTTON", "",
-          WS_VISIBLE | WS_CHILD | BS_GROUPBOX,
-          260, 180, 150, 150,
-          hwnd, NULL, NULL, NULL);
-
-     HBITMAP hLeftClickBmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_LEFT_CLICK));     //load left_click.bmp
-     HWND hImage_Left_Click = CreateWindow("STATIC", NULL,
-          WS_VISIBLE | WS_CHILD | SS_BITMAP,
-          270, 30, 100, 100, // Set reasonable width and height
-          hwnd, NULL, GetModuleHandle(NULL), NULL);
-          SendMessage(hImage_Left_Click, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hLeftClickBmp);
-     HBITMAP hRightClickBmp = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_RIGHT_CLICK));   //load right_click.bmp
-     HWND hImage_Right_Click = CreateWindow("STATIC", NULL,
-          WS_VISIBLE | WS_CHILD | SS_BITMAP,
-          270, 200, 100, 100, // Set reasonable width and height
-          hwnd, NULL, GetModuleHandle(NULL), NULL);
-          SendMessage(hImage_Right_Click, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hRightClickBmp);
-
+     break;
      case WM_HSCROLL:
      {
           if ((HWND)lParam == hTrack_left_click)
           {
                LEFT_CLICK_BUFFER_RATE = SendMessage(hTrack_left_click, TBM_GETPOS, 0, 0);                           //modify left click slide
-               sprintf(label_text, "Your Average 7 CPS Is Now %d CPS", level_cps[LEFT_CLICK_BUFFER_RATE]);
-               hLabel_7 = CreateWindow("STATIC", label_text, 
-                    WS_VISIBLE | WS_CHILD,
-                    20, 120, 200, 15,
-                    hwnd, (HMENU)ID_LABEL, NULL, NULL);
-                    SendMessage(hLabel_7, WM_SETFONT, (WPARAM)hFont16, TRUE);
+               sprintf(current_leftclick_cps, "Your Average 7 CPS Is Now %d CPS", level_cps[LEFT_CLICK_BUFFER_RATE]);
+               SetWindowText(hLabel_Current_LeftClick_CPS, current_leftclick_cps);
           }
           if ((HWND)lParam == hTrack_right_click) 
           {
                RIGHT_CLICK_BUFFER_RATE = SendMessage(hTrack_right_click, TBM_GETPOS, 0, 0);
-               sprintf(label_text, "Your Average 7 CPS Is Now %d CPS", level_cps[RIGHT_CLICK_BUFFER_RATE]);         //modify right click slide
-               hLabel_8 = CreateWindow("STATIC", label_text, 
-                    WS_VISIBLE | WS_CHILD,
-                    20, 290, 200, 15,
-                    hwnd, (HMENU)ID_LABEL, NULL, NULL);
-                    SendMessage(hLabel_8, WM_SETFONT, (WPARAM)hFont16, TRUE);
+               sprintf(current_rightclick_cps, "Your Average 7 CPS Is Now %d CPS", level_cps[RIGHT_CLICK_BUFFER_RATE]);         //modify right click slide
+               SetWindowText(hLabel_Current_RightClick_CPS, current_rightclick_cps);
           }
           break;
      }
@@ -220,8 +166,8 @@ switch (msg)
           
      case WM_COMMAND:
 
-          if (LOWORD(wParam) == BUTTON_GITHUB) ShellExecute(hwnd, "open", "https://github.com/HarpCheemse/Click-Buffer-Wind32-GUI-", NULL, NULL, SW_SHOWNORMAL);
-          if (LOWORD(wParam) == BUTTON_EXIT) PostQuitMessage(0);
+          if (LOWORD(wParam) == ID_BUTTON_GITHUB) ShellExecute(hwnd, "open", "https://github.com/HarpCheemse/Click-Buffer-Wind32-GUI-", NULL, NULL, SW_SHOWNORMAL);
+          if (LOWORD(wParam) == ID_BUTTON_EXIT) PostQuitMessage(0);
           break;
      case WM_DESTROY:
           PostQuitMessage(0);
