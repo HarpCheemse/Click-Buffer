@@ -5,14 +5,14 @@
             "name": "Debug with GDB",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}\\ClickBuffer.exe",  // Path to the built executable
+            "program": "${fileDirname}\\ClickBuffer.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "gdb",  // Ensure GDB is installed
+            "miDebuggerPath": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -20,7 +20,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc.exe build active file"  // The build task to run before debugging
+            "preLaunchTask": "C/C++: gcc.exe build active file"
         }
     ]
 }

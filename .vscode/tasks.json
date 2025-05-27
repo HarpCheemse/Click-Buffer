@@ -2,16 +2,16 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "C/C++: gcc.exe build active file",  // Must match launch.json's preLaunchTask
+            "label": "C/C++: gcc.exe build active file",
             "type": "shell",
             "command": "gcc",
             "args": [
                 "-g",
-                "${workspaceFolder}/src/gui.c",  // Path to the source file
-                "${workspaceFolder}/src/ClickBuffer.c",  // Path to another source file
-                "${workspaceFolder}/assets/ClickBuffer_res.o",  // Path to the object file in assets
+                "${workspaceFolder}/src/gui.c",
+                "${workspaceFolder}/src/ClickBuffer.c",
+                "${workspaceFolder}/assets/ClickBuffer_res.o",
                 "-o",
-                "${workspaceFolder}/src/ClickBuffer.exe",  // Output path
+                "${workspaceFolder}/src/ClickBuffer.exe",
                 "-luser32",
                 "-lgdi32",
                 "-lcomctl32",
